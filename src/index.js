@@ -1,11 +1,18 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
 import App from './App';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import {BrowserRouter, Route, Routes} from "react-router-dom";
+import ProfileRoleInformation from "./ProfileRoleInformation";
+import {createRoot} from "react-dom/client";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const container = document.getElementById('root');
+const root = createRoot(container);
+
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <BrowserRouter>
+        <Routes>
+            <Route path="/" element={<App />} />
+            <Route path="/character-system-role/:name" element={<ProfileRoleInformation />} />
+        </Routes>
+    </BrowserRouter>
 );
