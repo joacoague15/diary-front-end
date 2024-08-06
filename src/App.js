@@ -40,6 +40,8 @@ function App() {
             return <img src="/lucia.webp" alt="lucia" style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: 20 }} className="mr-3"/>
         else if (name === "mateo")
             return <img src="/mateo.webp" alt="mateo" style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: 20 }} className="profile-image mr-3"/>
+        else if (name === "mariana")
+            return <img src="/mariana.webp" alt="mateo" style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: 20 }} className="profile-image mr-3"/>
     }
 
     const capitalizeFirstLetter = (name) => {
