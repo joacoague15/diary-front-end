@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import axios from "axios";
 import {Button, Col, Container, Form, Row, Spinner} from "react-bootstrap";
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ function App() {
     const [chatCompletionResponse, setChatCompletionResponse] = useState([]);
     const [loadingRag, setLoadingRag] = useState(false);
     const [loadingChats, setLoadingChats] = useState(false);
+    const [newChatMessage, setNewChatMessage] = useState('');
 
 
     const handleAnalyze = async () => {
@@ -31,19 +32,22 @@ function App() {
             handleChatsCompletion().then(r => console.log(r));
     }, [ragResponse]);
 
-    const handleChatsCompletion = async () => {
+    const handleChatsCompletion = useCallback(async () => {
         setLoadingChats(true);
         try {
+            const chatHistory = chatCompletionResponse
+                .map(response => `${response.name}: ${response.message}`)
+                .join(' ');
             const response = await axios.get('http://127.0.0.1:8000/chat-completion', {
-                params: { news_information: ragResponse }
+                params: { news_information: ragResponse, chat_history: chatHistory }
             });
-            setChatCompletionResponse(response.data)
+            setChatCompletionResponse(response.data);
         } catch (error) {
             console.error("Error fetching data", error);
         } finally {
             setLoadingChats(false);
         }
-    }
+    }, [ragResponse, chatCompletionResponse]);
 
     const profileImgComponent = (imgSource, profileName) => {
         return (
@@ -61,12 +65,40 @@ function App() {
             return profileImgComponent("/mateo.webp", "mateo")
         } else if (name === "mariana") {
             return profileImgComponent("/mariana.webp", "mariana")
+        } else if (name === "usuario") {
+            return profileImgComponent("/user.webp", "mariana")
         }
     }
 
     const capitalizeFirstLetter = (name) => {
         if (!name) return "";
         return name.charAt(0).toUpperCase() + name.slice(1);
+    };
+
+    const handleCharacterResponses = async (chatMessage) => {
+        try {
+            const response = await axios.get('http://127.0.0.1:8000/character-responses', {
+                params: { news_information: ragResponse, prompt_to_answer: chatMessage }
+            });
+            const newMessages = response.data.map(item => ({ name: item.name, message: item.message }));
+            setChatCompletionResponse(prevState => [
+                ...prevState,
+                ...newMessages
+            ]);
+        } catch (error) {
+            console.error("Error fetching data", error);
+        }
+    }
+
+    // Somewhere here It's deleting my chat that I already added in array
+    // Also, new Lucia response is not being rendered as part of chat list
+    const handleNewChatMessage = () => {
+        setChatCompletionResponse(prevState => [
+            ...prevState,
+            { name: 'usuario', message: newChatMessage }
+        ]);
+        handleCharacterResponses(newChatMessage).then(r => console.log(r));
+        setNewChatMessage('');
     };
 
     return (
@@ -119,6 +151,21 @@ function App() {
                               ))
                           )}
                       </div>
+                      {chatCompletionResponse.length > 0 && <Form.Group controlId="newChatMessage" className="mt-3">
+                          <Form.Control
+                              size="lg"
+                              type="text"
+                              value={newChatMessage}
+                              onChange={(e) => setNewChatMessage(e.target.value)}
+                              placeholder="Escribir nuevo mensaje"
+                              style={{ fontSize: '1.5rem' }}
+                          />
+                          <div className="d-flex justify-content-center">
+                              <Button variant="primary" onClick={handleNewChatMessage} className="mt-3">
+                                  Enviar
+                              </Button>
+                          </div>
+                      </Form.Group>}
                   </Col>
               </Row>
             </Container>
