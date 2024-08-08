@@ -90,8 +90,6 @@ function App() {
         }
     }
 
-    // Somewhere here It's deleting my chat that I already added in array
-    // Also, new Lucia response is not being rendered as part of chat list
     const handleNewChatMessage = () => {
         setChatCompletionResponse(prevState => [
             ...prevState,
