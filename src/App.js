@@ -1,17 +1,41 @@
 import {useCallback, useEffect, useState} from "react";
 import axios from "axios";
-import {Button, Col, Container, Form, Row, Spinner} from "react-bootstrap";
-import { useNavigate } from 'react-router-dom';
+import {Button, Col, Container, Form, Modal, Row, Spinner} from "react-bootstrap";
+import ProfileRoleInformation from "./ProfileRoleInformation";
 
 function App() {
-    const navigate = useNavigate();
     const [scrapUrl, setScrapUrl] = useState("");
     const [ragResponse, setRagResponse] = useState("");
     const [chatCompletionResponse, setChatCompletionResponse] = useState([]);
     const [loadingRag, setLoadingRag] = useState(false);
     const [loadingChats, setLoadingChats] = useState(false);
     const [newChatMessage, setNewChatMessage] = useState('');
+    const [sendingMessage, setSendingMessage] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [profileName, setProfileName] = useState("");
 
+    useEffect(() => {
+        localStorage.setItem('scrapUrl', scrapUrl);
+    }, [scrapUrl]);
+
+    useEffect(() => {
+        localStorage.setItem('ragResponse', ragResponse);
+    }, [ragResponse]);
+
+    useEffect(() => {
+        localStorage.setItem('chatCompletionResponse', JSON.stringify(chatCompletionResponse));
+    }, [chatCompletionResponse]);
+
+    useEffect(() => {
+        const savedScrapUrl = localStorage.getItem('scrapUrl');
+        if (savedScrapUrl) setScrapUrl(savedScrapUrl);
+
+        const savedRagResponse = localStorage.getItem('ragResponse');
+        if (savedRagResponse) setRagResponse(savedRagResponse);
+
+        const savedChatCompletionResponse = localStorage.getItem('chatCompletionResponse');
+        if (savedChatCompletionResponse) setChatCompletionResponse(JSON.parse(savedChatCompletionResponse));
+    }, []);
 
     const handleAnalyze = async () => {
         setLoadingRag(true);
@@ -51,7 +75,10 @@ function App() {
 
     const profileImgComponent = (imgSource, profileName) => {
         return (
-            <button onClick={() => navigate(`/character-system-role/${profileName}`)} style={{background: 'none', border: 'none', padding: 0}}>
+            <button onClick={() => {
+                setProfileName(profileName);
+                setShowModal(true);
+            }} style={{background: 'none', border: 'none', padding: 0}}>
                 <img src={imgSource} alt={imgSource}
                      style={{width: '50px', height: '50px', borderRadius: '50%', marginRight: 20}}/>
             </button>
@@ -91,11 +118,12 @@ function App() {
     }
 
     const handleNewChatMessage = () => {
+        setSendingMessage(true);
         setChatCompletionResponse(prevState => [
             ...prevState,
             { name: 'usuario', message: newChatMessage }
         ]);
-        handleCharacterResponses(newChatMessage).then(r => console.log(r));
+        handleCharacterResponses(newChatMessage).then(() => setSendingMessage(false));
         setNewChatMessage('');
     };
 
@@ -159,10 +187,27 @@ function App() {
                               style={{ fontSize: '1.5rem' }}
                           />
                           <div className="d-flex justify-content-center">
-                              <Button variant="primary" onClick={handleNewChatMessage} className="mt-3">
-                                  Enviar
+                              <Button variant="primary" onClick={handleNewChatMessage} className="mt-3" style={{ marginBottom: 20 }} disabled={sendingMessage}>
+                                  {sendingMessage ? (
+                                      <Spinner animation="border" size="sm" role="status">
+                                          <span className="sr-only"></span>
+                                      </Spinner>
+                                  ) : (
+                                      "Enviar"
+                                  )}
                               </Button>
                           </div>
+                          <Modal show={showModal} onHide={() => {
+                              setShowModal(false);
+                              setProfileName("");
+                          }} size="lg">
+                              <Modal.Header closeButton>
+                                  <Modal.Title>{profileName}</Modal.Title>
+                              </Modal.Header>
+                              <Modal.Body>
+                                  <ProfileRoleInformation name={profileName} onClose={() => setShowModal(false)} />
+                              </Modal.Body>
+                          </Modal>
                       </Form.Group>}
                   </Col>
               </Row>
